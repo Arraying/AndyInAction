@@ -79,13 +79,13 @@ async def on_message(message):
 
         # Notify the channel with a rich embed
         link = f"[{instance}]({instance})"
-        description = f"Automatically banned **{message.author.id}** for the following link. Please verify:\n{link}"
+        description = f"Automatically banned **{message.author.id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
         embed = discord.Embed(description=description, colour=0xff0000)
         await channel.send(embed=embed)
 
         # If set up, ban the user.
         if bot["ban"]:
-            await message.author.ban(reason="Fraud.")
+            await message.author.ban(reason="Fraud.", delete_message_days=1)
 
 
 # Run the bot
