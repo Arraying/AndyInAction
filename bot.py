@@ -78,15 +78,29 @@ async def on_message(message):
             return
 
         # Notify the channel with a rich embed
+        user_id = message.author.id
         link = f"[{instance}]({instance})"
-        description = f"Automatically banned **{message.author.id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
+        description = f"Automatically banned **{user_id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
         embed = discord.Embed(description=description, colour=0xff0000)
         await channel.send(embed=embed)
 
         # If set up, ban the user.
         if bot["ban"]:
-            await message.author.ban(reason="Fraud.", delete_message_days=1)
+            # First, DM the user about the ban.
+            dm = bot["dm"]
+            if dm != "":
+                # Attempt to send DM, if it fails, not the end of the world.
+                try:
+                    await message.author.send(dm)
+                except (discord.HTTPException, discord.Forbidden):
+                    print(f"Private messaging {user_id} was not successful")
 
+            # Attempt to ban.
+            try:
+                await message.author.ban(reason="Fraud.", delete_message_days=1)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                print(f"Banning {user_id} was not successful")
+                print(f"---> {e}")
 
 # Run the bot
 client.run(bot["token"])
