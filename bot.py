@@ -49,7 +49,7 @@ async def on_message(message):
         return
 
     # Check if the content has a URL.
-    content = message.content
+    content = message.content.lower()
     matches_raw = url_pattern.findall(content)
     matches = ["".join(x) for x in matches_raw]
 
