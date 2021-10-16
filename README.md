@@ -17,11 +17,13 @@ Next, create a file called `bot.json` and ensure it follows this template:
 {
   "token": "your_token_here",
   "channel": "your_channel_here",
-  "ban": true
+  "ban": true,
+  "dm": "You have been banned from the server!"
 }
 ```
 The `token` represents the bot token, the `channel` is the ID of the channel where the bot will notify violations to. 
 Setting `ban` to false will just log the violation, not ban for it.
+The `dm` value will be sent to the offender as a DM before banning.
 
 Then, install all the requirements:
 ```

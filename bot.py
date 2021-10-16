@@ -60,6 +60,10 @@ async def on_message(message):
         # Ignore empty matches
         if url_raw == "":
             continue
+        # Ignore URLs without a HTTP(s) scheme.
+        # Andy does not work well with not 100% valid URLs.
+        if "http" not in url_raw or "https" not in url_raw:
+            continue
 
         print(f"Checking {url_raw}")
         parsed = urllib.parse.urlparse(url_raw)
