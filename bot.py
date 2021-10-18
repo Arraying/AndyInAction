@@ -1,9 +1,11 @@
+import asyncio
 import json
 import re
 import urllib.parse
 
 import discord
 from andy import suite
+officer_lock = asyncio.Lock() # Bot's messaging/banning will act as a shared resource.
 
 # Use basic logging setup.
 # Set all logging levels to INFO.
@@ -38,16 +40,14 @@ async def on_ready():
     """
     Prints out when the bot is ready.
     """
+    client.ban_cache = set()
     logging.info("Andy awake and monitoring for fraud.")
 
 
 @client.event
 async def on_message(message):
     """
-    When a message is received.
-    This will scan the contents for URLs.
-    For every URL, it will check if it is a scam URL.
-    If so, it will notify a channel, and if enabled, ban the member.
+    Called when a message is received.
     :param message: The created message.
     """
 
@@ -86,35 +86,56 @@ async def on_message(message):
 
     # If there has been a scam, deal with it.
     if scam:
-        # Look up the channel to notify.
-        channel = client.get_channel(int(bot["channel"]))
-        if channel is None:
-            logging.error("Could not log as channel is invalid.")
-            return
+        async with officer_lock:
+            result = await activate_officer(message, instance)
+        if result:
+            await asyncio.sleep(60)
+            client.ban_cache.remove(message.author.id)
 
-        # Notify the channel with a rich embed.
-        user_id = message.author.id
-        link = f"[{instance}]({instance})"
-        description = f"Automatically banned **{user_id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
-        embed = discord.Embed(description=description, colour=0xff0000)
-        await channel.send(embed=embed)
 
-        # If set up, ban the user.
-        if bot["ban"]:
-            # First, DM the user about the ban.
-            dm = bot["dm"]
-            if dm != "":
-                # Attempt to send DM, if it fails, not the end of the world.
-                try:
-                    await message.author.send(dm)
-                except (discord.HTTPException, discord.Forbidden):
-                    logging.exception(f"Private messaging {user_id} was not successful")
+async def activate_officer(message, instance):
+    """
+    This will scan a string's contents for URLs.
+    For every URL, it will check if it is a scam URL.
+    If so, it will notify a channel, and if enabled, ban the member.
+    :param id: The message author's ID.
+    :param message: The created message.
+    """
+    # Check if user has already been banned.
+    if message.author.id in client.ban_cache:
+        return
 
-            # Attempt to ban.
+    # Look up the channel to notify.
+    channel = client.get_channel(int(bot["channel"]))
+    if channel is None:
+        logging.error("Could not log as channel is invalid.")
+        return
+
+    # Notify the channel with a rich embed.
+    user_id = message.author.id
+    link = f"[{instance}]({instance})"
+    description = f"Automatically banned **{user_id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
+    embed = discord.Embed(description=description, colour=0xff0000)
+    await channel.send(embed=embed)
+
+    # If set up, ban the user.
+    if bot["ban"]:
+        # First, DM the user about the ban.
+        dm = bot["dm"]
+        if dm != "":
+            # Attempt to send DM, if it fails, not the end of the world.
             try:
-                await message.author.ban(reason="Fraud.", delete_message_days=1)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logging.exception(f"Banning {user_id} was not successful")
+                await message.author.send(dm)
+            except (discord.HTTPException, discord.Forbidden):
+                logging.exception(f"Private messaging {user_id} was not successful")
+
+        # Attempt to ban.
+        try:
+            await message.author.ban(reason="Fraud.", delete_message_days=1)
+            client.ban_cache.add(message.author.id)
+            return 1
+        except (discord.HTTPException, discord.Forbidden) as e:
+            logging.exception(f"Banning {user_id} was not successful")
 
 # Run the bot.
 client.run(bot["token"])
