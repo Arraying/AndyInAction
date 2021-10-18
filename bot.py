@@ -28,11 +28,9 @@ client = discord.Client(
 url_pattern = re.compile(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", re.DOTALL)
 
 # Load and attempt to parse the config files.
-with open("config.json") as config_file:
+with open("config.json") as config_file, open("bot.json") as bot_file:
     config = json.load(config_file)
     suite.valid_config(config)
-
-with open("bot.json") as bot_file:
     bot = json.load(bot_file)
 
 @client.event
