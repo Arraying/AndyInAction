@@ -5,6 +5,13 @@ import urllib.parse
 import discord
 from andy import suite
 
+# Use basic logging setup.
+# Set all logging levels to INFO.
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('discord')
+logger.setLevel(logging.INFO)
+
 # We just need guild updates (to see channels and whatnot) and messages.
 intents = discord.Intents(guilds=True, messages=True)
 
@@ -19,19 +26,17 @@ client = discord.Client(
 url_pattern = re.compile(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", re.DOTALL)
 
 # Load and attempt to parse the config files.
-config_file = open("config.json")
-bot_file = open("bot.json")
-config = json.load(config_file)
-bot = json.load(bot_file)
-suite.valid_config(config)
-
+with open("config.json") as config_file, open("bot.json") as bot_file:
+    config = json.load(config_file)
+    suite.valid_config(config)
+    bot = json.load(bot_file)
 
 @client.event
 async def on_ready():
     """
     Prints out when the bot is ready.
     """
-    print("Andy awake and monitoring for fraud.")
+    logging.info("Andy awake and monitoring for fraud.")
 
 
 @client.event
@@ -47,6 +52,10 @@ async def on_message(message):
     # Ignore itself.
     if message.author == client.user:
         return
+    # Ignore members with safe roles.
+    for role in message.author.roles:
+        if role.id in bot["safe_roles"]:
+            return
 
     # Check if the content has a URL.
     content = message.content.lower()
@@ -62,15 +71,15 @@ async def on_message(message):
             continue
         # Ignore URLs without a HTTP(s) scheme.
         # Andy does not work well with not 100% valid URLs.
-        if ("http" not in url_raw) and ("https" not in url_raw):
+        if "http" not in url_raw:
             continue
 
-        print(f"Checking {url_raw}")
+        logging.info(f"Checking {url_raw}")
         parsed = urllib.parse.urlparse(url_raw)
         if suite.is_scam(config, parsed, validate_config=False):
             scam = True
             instance = url_raw
-            print(f"---> Detected scam!")
+            logging.info(f"---> Detected scam!")
             break
 
     # If there has been a scam, deal with it.
@@ -78,10 +87,10 @@ async def on_message(message):
         # Look up the channel to notify.
         channel = client.get_channel(int(bot["channel"]))
         if channel is None:
-            print("Could not log as channel is invalid.")
+            logging.error("Could not log as channel is invalid.")
             return
 
-        # Notify the channel with a rich embed
+        # Notify the channel with a rich embed.
         user_id = message.author.id
         link = f"[{instance}]({instance})"
         description = f"Automatically banned **{user_id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
@@ -97,18 +106,13 @@ async def on_message(message):
                 try:
                     await message.author.send(dm)
                 except (discord.HTTPException, discord.Forbidden):
-                    print(f"Private messaging {user_id} was not successful")
+                    logging.exception(f"Private messaging {user_id} was not successful")
 
             # Attempt to ban.
             try:
                 await message.author.ban(reason="Fraud.", delete_message_days=1)
             except (discord.HTTPException, discord.Forbidden) as e:
-                print(f"Banning {user_id} was not successful")
-                print(f"---> {e}")
+                logging.exception(f"Banning {user_id} was not successful")
 
-# Run the bot
+# Run the bot.
 client.run(bot["token"])
-
-# Clean up open files.
-config_file.close()
-bot_file.close()

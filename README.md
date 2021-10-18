@@ -17,11 +17,13 @@ Next, create a file called `bot.json` and ensure it follows this template:
 {
   "token": "your_token_here",
   "channel": "your_channel_here",
+  "safe_roles": [],
   "ban": true,
   "dm": "You have been banned from the server!"
 }
 ```
-The `token` represents the bot token, the `channel` is the ID of the channel where the bot will notify violations to. 
+The `token` represents the bot token, the `channel` is the ID of the channel where the bot will notify violations to.
+`safe_roles` is a list of Discord role IDs - messages from server members with a safe role will not be checked for scam links.
 Setting `ban` to false will just log the violation, not ban for it.
 The `dm` value will be sent to the offender as a DM before banning.
 
