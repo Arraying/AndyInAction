@@ -54,6 +54,10 @@ async def on_message(message):
     # Ignore itself.
     if message.author == client.user:
         return
+    # Ignore members with safe roles
+    for role in message.author.roles:
+        if role.id in bot["safe_roles"]:
+            return
 
     # Check if the content has a URL.
     content = message.content.lower()
