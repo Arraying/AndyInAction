@@ -5,8 +5,8 @@ import urllib.parse
 import discord
 from andy import suite
 
-# Use basic logging setup
-# Set all logging levels to INFO
+# Use basic logging setup.
+# Set all logging levels to INFO.
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('discord')
@@ -54,7 +54,7 @@ async def on_message(message):
     # Ignore itself.
     if message.author == client.user:
         return
-    # Ignore members with safe roles
+    # Ignore members with safe roles.
     for role in message.author.roles:
         if role.id in bot["safe_roles"]:
             return
@@ -92,7 +92,7 @@ async def on_message(message):
             logging.error("Could not log as channel is invalid.")
             return
 
-        # Notify the channel with a rich embed
+        # Notify the channel with a rich embed.
         user_id = message.author.id
         link = f"[{instance}]({instance})"
         description = f"Automatically banned **{user_id}** ({message.author.name}#{message.author.discriminator}) for the following link. Please verify:\n{link}"
@@ -116,5 +116,5 @@ async def on_message(message):
             except (discord.HTTPException, discord.Forbidden) as e:
                 logging.exception(f"Banning {user_id} was not successful")
 
-# Run the bot
+# Run the bot.
 client.run(bot["token"])
