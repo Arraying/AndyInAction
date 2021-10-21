@@ -10,28 +10,28 @@ from andy import suite
 # Set all logging levels to INFO.
 import logging
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('discord')
+logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
 
 # Shared resources that require locks.
 class BanCache(set):
-    '''
+    """
     Set of users recently banned for fraud.
     Shared resource intended to be used via acquiring its lock:
 
     async with BanCache.lock:
         # use BanCache object
-    '''
+    """
     lock = asyncio.Lock()
 
 class Officer:
-    '''
+    """
     Routine for notifying a channel and banning a user.
     Shared resource intended to be used via acquiring its lock:
 
     async with Officer.lock:
         # use Officer object
-    '''
+    """
     lock = asyncio.Lock()
 
     @staticmethod
@@ -44,7 +44,7 @@ class Officer:
         # Check if user has already been banned.
         async with client.ban_cache.lock:
             if message.author.id in client.ban_cache:
-                logging.debug(f'User {message.author.id} found in ban cache.')
+                logging.debug(f"User {message.author.id} found in ban cache.")
                 return
 
         # Look up the channel to notify.
@@ -76,7 +76,7 @@ class Officer:
                 await message.author.ban(reason="Fraud.", delete_message_days=1)
                 async with client.ban_cache.lock:
                     client.ban_cache.add(message.author.id)
-                    logging.debug(f'User {message.author.id} cached.')
+                    logging.debug(f"User {message.author.id} cached.")
                 return 1
             except (discord.HTTPException, discord.Forbidden) as e:
                 logging.error(f"Banning {user_id} was not successful")
@@ -162,7 +162,7 @@ async def on_message(message):
             await asyncio.sleep(60)
             async with client.ban_cache.lock:
                 client.ban_cache.remove(message.author.id)
-            logging.debug(f'User {message.author.id} removed from ban cache.')
+            logging.debug(f"User {message.author.id} removed from ban cache.")
 
 
 
