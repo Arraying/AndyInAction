@@ -136,14 +136,11 @@ async def activate_officer(message, instance):
         # Attempt to ban.
         try:
             await message.author.ban(reason="Fraud.", delete_message_days=1)
-            # async with ban_cache_lock:
-            #     client.ban_cache.add(message.author.id)
-            # return 1
+            async with ban_cache_lock:
+                client.ban_cache.add(message.author.id)
+            return 1
         except (discord.HTTPException, discord.Forbidden) as e:
             logging.error(f"Banning {user_id} was not successful")
-        async with ban_cache_lock:
-            client.ban_cache.add(message.author.id)
-        return 1
 
 # Run the bot.
 client.run(bot["token"])
