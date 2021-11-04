@@ -57,6 +57,9 @@ async def on_message(message):
     # Ignore itself.
     if message.author == client.user:
         return
+    # Ignore messages from webhooks
+    if not isinstance(message.author, discord.Member):
+        return
     # Ignore members with safe roles.
     for role in message.author.roles:
         if role.id in bot["safe_roles"]:
