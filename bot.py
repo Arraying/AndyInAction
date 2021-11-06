@@ -102,7 +102,9 @@ async def on_message(message):
         # Extract the actual URL from potential redirects.
         actual_url = extract_actual_url(url_raw)
         parsed = urllib.parse.urlparse(actual_url)
-        if suite.is_scam(config, parsed, validate_config=False):
+        parsed_parent = urllib.parse.urlparse(url_raw)
+        # Check the actual URL, but also make sure to check the parent URL.
+        if suite.is_scam(config, parsed, validate_config=False) or actual_url != url_raw and suite.is_scam(config, parsed_parent, validate_config=False):
             scam = True
             instance = actual_url
             logging.info(f"---> Detected scam!")
